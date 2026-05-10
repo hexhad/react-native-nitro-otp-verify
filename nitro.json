@@ -1,0 +1,30 @@
+{
+  "$schema": "https://nitro.margelo.com/nitro.schema.json",
+  "cxxNamespace": [
+    "nitrootpverify"
+  ],
+  "ios": {
+    "iosModuleName": "NitroOtpVerify"
+  },
+  "android": {
+    "androidNamespace": [
+      "nitrootpverify"
+    ],
+    "androidCxxLibName": "NitroOtpVerify"
+  },
+  "autolinking": {
+    "NitroOtpVerify": {
+      "ios": {
+        "language": "swift",
+        "implementationClassName": "HybridNitroOtpVerify"
+      },
+      "android": {
+        "language": "kotlin",
+        "implementationClassName": "HybridNitroOtpVerify"
+      }
+    }
+  },
+  "ignorePaths": [
+    "**/node_modules"
+  ]
+}
