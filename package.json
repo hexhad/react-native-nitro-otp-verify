@@ -42,11 +42,11 @@
   "workspaces": [
     "example"
   ],
-  "repository": "https://github.com/hashan/react-native-nitro-otp-verify.git",
+  "repository": "https://github.com/hexhad/react-native-nitro-otp-verify.git",
   "author": "hashan",
   "license": "MIT",
-  "bugs": "https://github.com/hashan/react-native-nitro-otp-verify/issues",
-  "homepage": "https://github.com/hashan/react-native-nitro-otp-verify#readme",
+  "bugs": "https://github.com/hexhad/react-native-nitro-otp-verify/issues",
+  "homepage": "https://github.com/hexhad/react-native-nitro-otp-verify#readme",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
