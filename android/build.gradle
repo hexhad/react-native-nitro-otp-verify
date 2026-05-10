@@ -137,6 +137,8 @@ dependencies {
 
   // Add a dependency on NitroModules
   implementation project(":react-native-nitro-modules")
+
+  implementation 'com.google.android.gms:play-services-auth-api-phone:18.0.2'
 }
 
 if (isNewArchitectureEnabled()) {

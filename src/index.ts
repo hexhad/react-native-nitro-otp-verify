@@ -3,3 +3,5 @@ import type { NitroOtpVerify as NitroOtpVerifySpec } from './specs/nitro-otp-ver
 
 export const NitroOtpVerify =
   NitroModules.createHybridObject<NitroOtpVerifySpec>('NitroOtpVerify')
+
+export { useOtpVerify } from './useOtpVerify'
