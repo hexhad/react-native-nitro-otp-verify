@@ -10,14 +10,21 @@
 // Forward declarations of C++ defined types
 // Forward declaration of `HybridNitroOtpVerifySpec` to properly resolve imports.
 namespace margelo::nitro::nitrootpverify { class HybridNitroOtpVerifySpec; }
+// Forward declaration of `SmsRetrieverEvent` to properly resolve imports.
+namespace margelo::nitro::nitrootpverify { struct SmsRetrieverEvent; }
+// Forward declaration of `SmsRetrieverStatus` to properly resolve imports.
+namespace margelo::nitro::nitrootpverify { enum class SmsRetrieverStatus; }
 
 // Include C++ defined types
 #include "HybridNitroOtpVerifySpec.hpp"
+#include "SmsRetrieverEvent.hpp"
+#include "SmsRetrieverStatus.hpp"
 #include <NitroModules/Promise.hpp>
 #include <NitroModules/Result.hpp>
 #include <exception>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 

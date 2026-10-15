@@ -14,8 +14,8 @@ namespace margelo::nitro::nitrootpverify {
     HybridObject::loadHybridMethods();
     // load custom methods/properties
     registerHybrids(this, [](Prototype& prototype) {
+      prototype.registerHybridGetter("isSupported", &HybridNitroOtpVerifySpec::getIsSupported);
       prototype.registerHybridMethod("getHash", &HybridNitroOtpVerifySpec::getHash);
-      prototype.registerHybridMethod("requestHint", &HybridNitroOtpVerifySpec::requestHint);
       prototype.registerHybridMethod("startOtpListener", &HybridNitroOtpVerifySpec::startOtpListener);
       prototype.registerHybridMethod("stopOtpListener", &HybridNitroOtpVerifySpec::stopOtpListener);
     });

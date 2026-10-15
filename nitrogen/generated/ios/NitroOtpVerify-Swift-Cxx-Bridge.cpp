@@ -14,11 +14,11 @@
 
 namespace margelo::nitro::nitrootpverify::bridge::swift {
 
-  // pragma MARK: std::function<void(const std::vector<std::string>& /* result */)>
-  Func_void_std__vector_std__string_ create_Func_void_std__vector_std__string_(void* NON_NULL swiftClosureWrapper) noexcept {
-    auto swiftClosure = NitroOtpVerify::Func_void_std__vector_std__string_::fromUnsafe(swiftClosureWrapper);
-    return [swiftClosure = std::move(swiftClosure)](const std::vector<std::string>& result) mutable -> void {
-      swiftClosure.call(result);
+  // pragma MARK: std::function<void()>
+  Func_void create_Func_void(void* NON_NULL swiftClosureWrapper) noexcept {
+    auto swiftClosure = NitroOtpVerify::Func_void::fromUnsafe(swiftClosureWrapper);
+    return [swiftClosure = std::move(swiftClosure)]() mutable -> void {
+      swiftClosure.call();
     };
   }
   
@@ -30,19 +30,11 @@ namespace margelo::nitro::nitrootpverify::bridge::swift {
     };
   }
   
-  // pragma MARK: std::function<void(const std::string& /* result */)>
-  Func_void_std__string create_Func_void_std__string(void* NON_NULL swiftClosureWrapper) noexcept {
-    auto swiftClosure = NitroOtpVerify::Func_void_std__string::fromUnsafe(swiftClosureWrapper);
-    return [swiftClosure = std::move(swiftClosure)](const std::string& result) mutable -> void {
-      swiftClosure.call(result);
-    };
-  }
-  
-  // pragma MARK: std::function<void()>
-  Func_void create_Func_void(void* NON_NULL swiftClosureWrapper) noexcept {
-    auto swiftClosure = NitroOtpVerify::Func_void::fromUnsafe(swiftClosureWrapper);
-    return [swiftClosure = std::move(swiftClosure)]() mutable -> void {
-      swiftClosure.call();
+  // pragma MARK: std::function<void(const SmsRetrieverEvent& /* event */)>
+  Func_void_SmsRetrieverEvent create_Func_void_SmsRetrieverEvent(void* NON_NULL swiftClosureWrapper) noexcept {
+    auto swiftClosure = NitroOtpVerify::Func_void_SmsRetrieverEvent::fromUnsafe(swiftClosureWrapper);
+    return [swiftClosure = std::move(swiftClosure)](const SmsRetrieverEvent& event) mutable -> void {
+      swiftClosure.call(event);
     };
   }
   

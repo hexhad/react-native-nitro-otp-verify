@@ -28,6 +28,12 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      # npm >= 11.5 is required for trusted publishing (OIDC) and provenance
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org'
       - name: Setup Bun.js
         uses: oven-sh/setup-bun@v2
         with:

@@ -10,6 +10,7 @@ package com.margelo.nitro.nitrootpverify
 import androidx.annotation.Keep
 import com.facebook.jni.HybridData
 import com.facebook.proguard.annotations.DoNotStrip
+import dalvik.annotation.optimization.FastNative
 import com.margelo.nitro.core.Promise
 import com.margelo.nitro.core.HybridObject
 
@@ -26,29 +27,27 @@ import com.margelo.nitro.core.HybridObject
 )
 abstract class HybridNitroOtpVerifySpec: HybridObject() {
   // Properties
-  
+  @get:DoNotStrip
+  @get:Keep
+  abstract val isSupported: Boolean
 
   // Methods
   @DoNotStrip
   @Keep
-  abstract fun getHash(): Promise<Array<String>>
+  abstract fun getHash(): Array<String>
+  
+  abstract fun startOtpListener(handler: (event: SmsRetrieverEvent) -> Unit): Promise<Unit>
   
   @DoNotStrip
   @Keep
-  abstract fun requestHint(): Promise<String>
-  
-  abstract fun startOtpListener(handler: (otp: String) -> Unit): Promise<Unit>
-  
-  @DoNotStrip
-  @Keep
-  private fun startOtpListener_cxx(handler: Func_void_std__string): Promise<Unit> {
+  private fun startOtpListener_cxx(handler: Func_void_SmsRetrieverEvent): Promise<Unit> {
     val __result = startOtpListener(handler)
     return __result
   }
   
   @DoNotStrip
   @Keep
-  abstract fun stopOtpListener(): Promise<Unit>
+  abstract fun stopOtpListener(): Unit
 
   // Default implementation of `HybridObject.toString()`
   override fun toString(): String {
@@ -60,6 +59,7 @@ abstract class HybridNitroOtpVerifySpec: HybridObject() {
   @Keep
   protected open class CxxPart(javaPart: HybridNitroOtpVerifySpec): HybridObject.CxxPart(javaPart) {
     // C++ JHybridNitroOtpVerifySpec::CxxPart::initHybrid(...)
+    @FastNative
     external override fun initHybrid(): HybridData
   }
   override fun createCxxPart(): CxxPart {

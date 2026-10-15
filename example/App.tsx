@@ -11,17 +11,26 @@ import { useOtpVerify } from 'react-native-nitro-otp-verify';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function App() {
-  const { otp, message, hash, timeoutError, startListener, stopListener } =
-    useOtpVerify({ numberOfDigits: 6 });
-
-  console.log('[COPY FROM DEV TOOLS] APP HASH', hash?.[0]);
+  const {
+    otp,
+    message,
+    hash,
+    timeoutError,
+    error,
+    isSupported,
+    isListening,
+    startListener,
+    stopListener,
+  } = useOtpVerify({ numberOfDigits: 6 });
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Hash */}
       <View style={styles.section}>
         <Text style={styles.label}>App Hash</Text>
-        <Text style={styles.hash}>{hash?.[0] ?? 'Loading...'}</Text>
+        <Text style={styles.hash} selectable testID="app-hash">
+          {hash?.[0] ?? (isSupported ? '—' : 'Not supported on this device')}
+        </Text>
       </View>
 
       {/* OTP Input */}
@@ -34,21 +43,28 @@ export default function App() {
           keyboardType="number-pad"
           maxLength={6}
           editable={false}
+          testID="otp-input"
         />
       </View>
 
       {/* Status */}
       <View style={styles.section}>
         <Text style={styles.label}>Status</Text>
-        {!otp && !timeoutError && (
+        {isListening && (
           <View style={styles.row}>
             <ActivityIndicator size="small" color="#6C63FF" />
             <Text style={styles.statusText}>Listening for SMS...</Text>
           </View>
         )}
         {otp && (
-          <Text style={styles.successText}>OTP received successfully</Text>
+          <Text style={styles.successText} testID="otp-status">
+            OTP received successfully
+          </Text>
         )}
+        {!isListening && !otp && !timeoutError && !error && (
+          <Text style={styles.statusText}>Stopped</Text>
+        )}
+        {error && <Text style={styles.errorText}>{error}</Text>}
         {timeoutError && (
           <Text style={styles.errorText}>Timeout — no SMS received</Text>
         )}

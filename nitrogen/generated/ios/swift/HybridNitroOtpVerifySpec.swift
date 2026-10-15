@@ -10,13 +10,12 @@ import NitroModules
 /// See ``HybridNitroOtpVerifySpec``
 public protocol HybridNitroOtpVerifySpec_protocol: HybridObject {
   // Properties
-  
+  var isSupported: Bool { get }
 
   // Methods
-  func getHash() throws -> Promise<[String]>
-  func requestHint() throws -> Promise<String>
-  func startOtpListener(handler: @escaping (_ otp: String) -> Void) throws -> Promise<Void>
-  func stopOtpListener() throws -> Promise<Void>
+  func getHash() throws -> [String]
+  func startOtpListener(handler: @escaping (_ event: SmsRetrieverEvent) -> Void) throws -> Promise<Void>
+  func stopOtpListener() throws -> Void
 }
 
 public extension HybridNitroOtpVerifySpec_protocol {

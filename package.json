@@ -1,7 +1,7 @@
 {
   "name": "react-native-nitro-otp-verify",
   "version": "0.1.2",
-  "description": "Automatic SMS OTP reading for React Native (Android SMS Retriever API), built with Nitro Modules",
+  "description": "Zero-tap SMS OTP reading for React Native (Android SMS Retriever API), built with Nitro Modules",
   "main": "./lib/commonjs/index.js",
   "module": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
@@ -13,7 +13,8 @@
     "release": "semantic-release",
     "build": "npm run typecheck && bob build",
     "codegen": "nitrogen --logLevel=\"debug\" && npm run build && node post-script.js",
-    "prepack": "bun run build"
+    "prepack": "bun run build",
+    "test": "jest"
   },
   "keywords": [
     "react-native",
@@ -32,6 +33,7 @@
     "android/build.gradle",
     "android/fix-prefab.gradle",
     "android/gradle.properties",
+    "android/proguard-rules.pro",
     "android/CMakeLists.txt",
     "android/src",
     "ios/**/*.h",
@@ -39,6 +41,7 @@
     "ios/**/*.mm",
     "ios/**/*.cpp",
     "ios/**/*.swift",
+    "skills",
     "*.podspec",
     "README.md",
     "!**/__tests__",
@@ -62,21 +65,26 @@
   },
   "devDependencies": {
     "@jamesacarr/eslint-formatter-github-actions": "^0.2.0",
+    "@react-native/babel-preset": "0.87.1",
+    "@react-native/jest-preset": "0.87.1",
+    "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^29.5.12",
     "@types/react": "19.2.0",
     "conventional-changelog-conventionalcommits": "^9.1.0",
-    "nitrogen": "0.35.6",
+    "jest": "^29.7.0",
+    "nitrogen": "0.37.1",
     "react": "19.2.3",
-    "react-native": "0.84.1",
+    "react-native": "0.87.1",
     "react-native-builder-bob": "^0.40.18",
-    "react-native-nitro-modules": "0.35.6",
+    "react-native-nitro-modules": "0.37.1",
+    "react-test-renderer": "19.2.3",
     "semantic-release": "^25.0.3",
     "typescript": "^5.8.3"
   },
   "peerDependencies": {
     "react": "*",
-    "react-native": "*",
-    "react-native-nitro-modules": "*"
+    "react-native": ">=0.76.0",
+    "react-native-nitro-modules": ">=0.37.0"
   },
   "eslintConfig": {
     "root": true,
@@ -121,7 +129,7 @@
       [
         "typescript",
         {
-          "project": "tsconfig.json"
+          "project": "tsconfig.build.json"
         }
       ]
     ]

@@ -16,7 +16,7 @@
 #include <NitroModules/HybridObjectRegistry.hpp>
 
 #include "JHybridNitroOtpVerifySpec.hpp"
-#include "JFunc_void_std__string.hpp"
+#include "JFunc_void_SmsRetrieverEvent.hpp"
 #include <NitroModules/DefaultConstructableObject.hpp>
 
 namespace margelo::nitro::nitrootpverify {
@@ -42,7 +42,7 @@ void registerAllNatives() {
 
   // Register native JNI methods
   margelo::nitro::nitrootpverify::JHybridNitroOtpVerifySpec::CxxPart::registerNatives();
-  margelo::nitro::nitrootpverify::JFunc_void_std__string_cxx::registerNatives();
+  margelo::nitro::nitrootpverify::JFunc_void_SmsRetrieverEvent_cxx::registerNatives();
 
   // Register Nitro Hybrid Objects
   HybridObjectRegistry::registerHybridObjectConstructor(
