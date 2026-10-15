@@ -1,7 +1,7 @@
 {
   "name": "react-native-nitro-otp-verify",
   "version": "0.1.2",
-  "description": "react-native-nitro-otp-verify is a react native package built with Nitro",
+  "description": "Automatic SMS OTP reading for React Native (Android SMS Retriever API), built with Nitro Modules",
   "main": "./lib/commonjs/index.js",
   "module": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
@@ -12,18 +12,22 @@
     "clean": "git clean -dfX",
     "release": "semantic-release",
     "build": "npm run typecheck && bob build",
-    "codegen": "nitrogen --logLevel=\"debug\" && npm run build && node post-script.js"
+    "codegen": "nitrogen --logLevel=\"debug\" && npm run build && node post-script.js",
+    "prepack": "bun run build"
   },
   "keywords": [
     "react-native",
+    "nitro",
+    "otp",
+    "sms",
+    "sms-retriever",
+    "android",
     "react-native-nitro-otp-verify"
   ],
   "files": [
     "src",
-    "react-native.config.js",
     "lib",
     "nitrogen",
-    "cpp",
     "nitro.json",
     "android/build.gradle",
     "android/fix-prefab.gradle",
@@ -35,26 +39,29 @@
     "ios/**/*.mm",
     "ios/**/*.cpp",
     "ios/**/*.swift",
-    "app.plugin.js",
     "*.podspec",
-    "README.md"
+    "README.md",
+    "!**/__tests__",
+    "!**/.*"
   ],
   "workspaces": [
     "example"
   ],
-  "repository": "https://github.com/hexhad/react-native-nitro-otp-verify.git",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hexhad/react-native-nitro-otp-verify.git"
+  },
   "author": "hashan",
   "license": "MIT",
   "bugs": "https://github.com/hexhad/react-native-nitro-otp-verify/issues",
   "homepage": "https://github.com/hexhad/react-native-nitro-otp-verify#readme",
   "publishConfig": {
     "access": "public",
-    "registry": "https://registry.npmjs.org/"
+    "registry": "https://registry.npmjs.org/",
+    "provenance": true
   },
   "devDependencies": {
     "@jamesacarr/eslint-formatter-github-actions": "^0.2.0",
-    "@semantic-release/changelog": "^6.0.3",
-    "@semantic-release/git": "^10.0.1",
     "@types/jest": "^29.5.12",
     "@types/react": "19.2.0",
     "conventional-changelog-conventionalcommits": "^9.1.0",

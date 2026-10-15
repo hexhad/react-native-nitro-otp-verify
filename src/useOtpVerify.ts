@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Platform } from 'react-native'
-import { NitroOtpVerify } from './index'
+import { NitroOtpVerify } from './NitroOtpVerify'
 
 const LISTENER_TIMEOUT_MS = 5 * 60 * 1000
 
-interface UseOtpVerifyOptions {
+export interface UseOtpVerifyOptions {
   numberOfDigits?: number
 }
 
-interface UseOtpVerifyResult {
+export interface UseOtpVerifyResult {
   otp: string | null
   message: string | null
   hash: string[] | null
@@ -50,8 +50,10 @@ export function useOtpVerify({
     NitroOtpVerify.startOtpListener((smsMessage: string) => {
       if (!isListeningRef.current) return
       setMessage(smsMessage)
-      const digits = smsMessage.match(/\b(\d{4,8})\b/)?.[0] ?? null
-      if (digits && digits.length === numberOfDigits) {
+      const digits =
+        smsMessage.match(new RegExp(`\\b\\d{${numberOfDigits}}\\b`))?.[0] ??
+        null
+      if (digits) {
         setOtp(digits)
         stopListener()
       }

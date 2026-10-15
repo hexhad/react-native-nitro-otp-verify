@@ -4,7 +4,7 @@
 
 [![Version](https://img.shields.io/npm/v/react-native-nitro-otp-verify.svg)](https://www.npmjs.com/package/react-native-nitro-otp-verify)
 [![Downloads](https://img.shields.io/npm/dm/react-native-nitro-otp-verify.svg)](https://www.npmjs.com/package/react-native-nitro-otp-verify)
-[![License](https://img.shields.io/npm/l/react-native-nitro-otp-verify.svg)](https://github.com/hashan/react-native-nitro-otp-verify/blob/main/LICENSE)
+[![License](https://img.shields.io/npm/l/react-native-nitro-otp-verify.svg)](https://github.com/hexhad/react-native-nitro-otp-verify/blob/main/LICENSE)
 
 ---
 

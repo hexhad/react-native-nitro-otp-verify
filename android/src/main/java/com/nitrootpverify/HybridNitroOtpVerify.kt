@@ -17,8 +17,8 @@ import java.security.MessageDigest
 
 class HybridNitroOtpVerify : HybridNitroOtpVerifySpec() {
 
-  private var receiver: BroadcastReceiver? = null
-  private var otpHandler: ((otp: String) -> Unit)? = null
+  @Volatile private var receiver: BroadcastReceiver? = null
+  @Volatile private var otpHandler: ((otp: String) -> Unit)? = null
 
   override val memorySize: Long get() = 0L
 
@@ -32,11 +32,12 @@ class HybridNitroOtpVerify : HybridNitroOtpVerifySpec() {
 
   override fun startOtpListener(handler: (otp: String) -> Unit): Promise<Unit> = Promise.async {
     val ctx = appContext
-    otpHandler = handler
+    // Drop any previous registration so repeated starts don't leak receivers.
+    unregisterReceiver(ctx)
 
     Tasks.await(SmsRetriever.getClient(ctx).startSmsRetriever())
 
-    receiver = object : BroadcastReceiver() {
+    val newReceiver = object : BroadcastReceiver() {
       override fun onReceive(c: Context?, intent: Intent?) {
         if (intent?.action != SmsRetriever.SMS_RETRIEVED_ACTION) return
         val status = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -56,16 +57,35 @@ class HybridNitroOtpVerify : HybridNitroOtpVerifySpec() {
       }
     }
 
+    // Only Play Services (holder of SEND_PERMISSION) may deliver to this receiver,
+    // otherwise any installed app could broadcast a spoofed OTP.
     val filter = IntentFilter(SmsRetriever.SMS_RETRIEVED_ACTION)
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-      ctx.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
-    } else {
-      ctx.registerReceiver(receiver, filter)
+    synchronized(this) {
+      otpHandler = handler
+      receiver = newReceiver
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        ctx.registerReceiver(
+          newReceiver, filter, SmsRetriever.SEND_PERMISSION, null, Context.RECEIVER_EXPORTED
+        )
+      } else {
+        ctx.registerReceiver(newReceiver, filter, SmsRetriever.SEND_PERMISSION, null)
+      }
     }
   }
 
   override fun stopOtpListener(): Promise<Unit> = Promise.async {
-    receiver?.let { appContext.unregisterReceiver(it) }
+    unregisterReceiver(appContext)
+  }
+
+  @Synchronized
+  private fun unregisterReceiver(ctx: Context) {
+    receiver?.let {
+      try {
+        ctx.unregisterReceiver(it)
+      } catch (_: IllegalArgumentException) {
+        // Already unregistered
+      }
+    }
     receiver = null
     otpHandler = null
   }
