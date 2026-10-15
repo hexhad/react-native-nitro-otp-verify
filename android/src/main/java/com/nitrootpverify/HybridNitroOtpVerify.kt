@@ -7,124 +7,151 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Base64
+import androidx.annotation.Keep
+import androidx.core.content.ContextCompat
+import androidx.core.content.IntentCompat
+import com.facebook.proguard.annotations.DoNotStrip
 import com.google.android.gms.auth.api.phone.SmsRetriever
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.common.api.CommonStatusCodes
+import com.google.android.gms.common.api.Status
 import com.google.android.gms.tasks.Tasks
-import com.margelo.nitro.nitrootpverify.HybridNitroOtpVerifySpec
+import com.margelo.nitro.NitroModules
 import com.margelo.nitro.core.Promise
+import com.margelo.nitro.nitrootpverify.HybridNitroOtpVerifySpec
+import com.margelo.nitro.nitrootpverify.SmsRetrieverEvent
+import com.margelo.nitro.nitrootpverify.SmsRetrieverStatus
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 
+// Nitro instantiates this class from C++ through JNI, which R8 cannot see. Without these
+// annotations a minified release build strips the constructor and field initializers.
+@DoNotStrip
+@Keep
 class HybridNitroOtpVerify : HybridNitroOtpVerifySpec() {
 
-  @Volatile private var receiver: BroadcastReceiver? = null
-  @Volatile private var otpHandler: ((otp: String) -> Unit)? = null
+  private val lock = Any()
+  private var handler: ((event: SmsRetrieverEvent) -> Unit)? = null
+  private var receiver: BroadcastReceiver? = null
 
   override val memorySize: Long get() = 0L
 
-  override fun getHash(): Promise<Array<String>> = Promise.async {
-    arrayOf(computeAppHash(appContext))
+  override val isSupported: Boolean by lazy {
+    NitroModules.applicationContext?.let {
+      GoogleApiAvailability.getInstance()
+        .isGooglePlayServicesAvailable(it) == ConnectionResult.SUCCESS
+    } ?: false
   }
 
-  override fun requestHint(): Promise<String> = Promise.async {
-    ""
+  // The signing certificate can't change at runtime, so hash once.
+  private val appHashes: Array<String> by lazy {
+    NitroModules.applicationContext?.let { computeAppHashes(it) } ?: emptyArray()
   }
 
-  override fun startOtpListener(handler: (otp: String) -> Unit): Promise<Unit> = Promise.async {
-    val ctx = appContext
-    // Drop any previous registration so repeated starts don't leak receivers.
-    unregisterReceiver(ctx)
+  override fun getHash(): Array<String> = appHashes
 
-    Tasks.await(SmsRetriever.getClient(ctx).startSmsRetriever())
+  override fun startOtpListener(handler: (event: SmsRetrieverEvent) -> Unit): Promise<Unit> =
+    Promise.async {
+      val ctx = appContext
+      stopOtpListener()
 
-    val newReceiver = object : BroadcastReceiver() {
-      override fun onReceive(c: Context?, intent: Intent?) {
-        if (intent?.action != SmsRetriever.SMS_RETRIEVED_ACTION) return
-        val status = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-          intent.extras?.getParcelable(
-            SmsRetriever.EXTRA_STATUS,
-            com.google.android.gms.common.api.Status::class.java
-          )
-        } else {
-          @Suppress("DEPRECATION")
-          intent.extras?.get(SmsRetriever.EXTRA_STATUS) as? com.google.android.gms.common.api.Status
-        } ?: return
-        if (status.statusCode == CommonStatusCodes.SUCCESS) {
-          val msg = intent.extras
-            ?.getString(SmsRetriever.EXTRA_SMS_MESSAGE) ?: return
-          otpHandler?.invoke(msg)
-        }
+      val rx = createReceiver()
+      synchronized(lock) {
+        this.handler = handler
+        receiver = rx
       }
-    }
+      // The broadcast comes from Play services (another app), so the receiver must be
+      // exported on Android 13+; SEND_PERMISSION ensures only Play services can deliver it,
+      // otherwise any installed app could broadcast a spoofed OTP.
+      ContextCompat.registerReceiver(
+        ctx,
+        rx,
+        IntentFilter(SmsRetriever.SMS_RETRIEVED_ACTION),
+        SmsRetriever.SEND_PERMISSION,
+        null,
+        ContextCompat.RECEIVER_EXPORTED
+      )
 
-    // Only Play Services (holder of SEND_PERMISSION) may deliver to this receiver,
-    // otherwise any installed app could broadcast a spoofed OTP.
-    val filter = IntentFilter(SmsRetriever.SMS_RETRIEVED_ACTION)
-    synchronized(this) {
-      otpHandler = handler
-      receiver = newReceiver
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        ctx.registerReceiver(
-          newReceiver, filter, SmsRetriever.SEND_PERMISSION, null, Context.RECEIVER_EXPORTED
-        )
-      } else {
-        ctx.registerReceiver(newReceiver, filter, SmsRetriever.SEND_PERMISSION, null)
-      }
-    }
-  }
-
-  override fun stopOtpListener(): Promise<Unit> = Promise.async {
-    unregisterReceiver(appContext)
-  }
-
-  @Synchronized
-  private fun unregisterReceiver(ctx: Context) {
-    receiver?.let {
       try {
-        ctx.unregisterReceiver(it)
-      } catch (_: IllegalArgumentException) {
-        // Already unregistered
+        Tasks.await(SmsRetriever.getClient(ctx).startSmsRetriever())
+      } catch (e: Exception) {
+        stopOtpListener()
+        throw e
       }
     }
-    receiver = null
-    otpHandler = null
+
+  override fun stopOtpListener() {
+    val rx = synchronized(lock) {
+      handler = null
+      receiver.also { receiver = null }
+    } ?: return
+    try {
+      NitroModules.applicationContext?.unregisterReceiver(rx)
+    } catch (_: IllegalArgumentException) {
+      // Already unregistered
+    }
+  }
+
+  /** Delivers [event] to the active handler at most once, then ends the session. */
+  private fun finish(event: SmsRetrieverEvent) {
+    val h = synchronized(lock) { handler }
+    stopOtpListener()
+    h?.invoke(event)
+  }
+
+  private fun createReceiver() = object : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+      if (intent.action != SmsRetriever.SMS_RETRIEVED_ACTION) return
+      val extras = intent.extras ?: return
+      val status = IntentCompat.getParcelableExtra(intent, SmsRetriever.EXTRA_STATUS, Status::class.java)
+        ?: return
+      when (status.statusCode) {
+        CommonStatusCodes.SUCCESS -> {
+          val message = extras.getString(SmsRetriever.EXTRA_SMS_MESSAGE) ?: return
+          finish(SmsRetrieverEvent(SmsRetrieverStatus.RECEIVED, message, null))
+        }
+        CommonStatusCodes.TIMEOUT ->
+          finish(SmsRetrieverEvent(SmsRetrieverStatus.TIMEOUT, null, null))
+        else -> finish(
+          SmsRetrieverEvent(
+            SmsRetrieverStatus.ERROR,
+            null,
+            CommonStatusCodes.getStatusCodeString(status.statusCode)
+          )
+        )
+      }
+    }
   }
 
   // ── App hash computation ──────────────────────────────────────────────
 
-  private fun computeAppHash(ctx: Context): String {
-    return try {
-      val packageName = ctx.packageName
-      val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-        val info = ctx.packageManager.getPackageInfo(
-          packageName,
-          PackageManager.GET_SIGNING_CERTIFICATES
-        )
-        info.signingInfo?.apkContentsSigners ?: emptyArray()
-      } else {
-        @Suppress("DEPRECATION")
-        val info = ctx.packageManager.getPackageInfo(
-          packageName,
-          PackageManager.GET_SIGNATURES
-        )
-        @Suppress("DEPRECATION")
-        info.signatures ?: emptyArray()
-      }
-
-      val md = MessageDigest.getInstance("SHA-256")
-      val digest = md.digest(
-        "$packageName ${signatures.firstOrNull()?.toCharsString() ?: ""}".toByteArray(
-          StandardCharsets.UTF_8
-        )
+  private fun computeAppHashes(ctx: Context): Array<String> = try {
+    val packageName = ctx.packageName
+    val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+      val info = ctx.packageManager.getPackageInfo(
+        packageName,
+        PackageManager.GET_SIGNING_CERTIFICATES
       )
-      Base64.encodeToString(digest, Base64.NO_PADDING or Base64.NO_WRAP)
-        .substring(0, 11)
-    } catch (e: Exception) {
-      ""
+      info.signingInfo?.apkContentsSigners ?: emptyArray()
+    } else {
+      @Suppress("DEPRECATION")
+      val info = ctx.packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES)
+      @Suppress("DEPRECATION")
+      info.signatures ?: emptyArray()
     }
+
+    signatures.map { signature ->
+      val digest = MessageDigest.getInstance("SHA-256").digest(
+        "$packageName ${signature.toCharsString()}".toByteArray(StandardCharsets.UTF_8)
+      )
+      Base64.encodeToString(digest, Base64.NO_PADDING or Base64.NO_WRAP).substring(0, 11)
+    }.distinct().toTypedArray()
+  } catch (_: Exception) {
+    emptyArray()
   }
 
   private val appContext: Context
-    get() = com.margelo.nitro.NitroModules.applicationContext
+    get() = NitroModules.applicationContext
       ?: error("Application context not available")
 }

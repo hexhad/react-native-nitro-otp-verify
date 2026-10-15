@@ -1,6 +1,7 @@
 export { NitroOtpVerify } from './NitroOtpVerify'
-export { useOtpVerify } from './useOtpVerify'
+export { useOtpVerify, extractDigits } from './useOtpVerify'
+export type { UseOtpVerifyOptions, UseOtpVerifyResult } from './useOtpVerify'
 export type {
-  UseOtpVerifyOptions,
-  UseOtpVerifyResult,
-} from './useOtpVerify'
+  SmsRetrieverEvent,
+  SmsRetrieverStatus,
+} from './specs/nitro-otp-verify.nitro'

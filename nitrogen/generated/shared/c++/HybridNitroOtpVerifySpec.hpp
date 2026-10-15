@@ -13,11 +13,13 @@
 #error NitroModules cannot be found! Are you sure you installed NitroModules properly?
 #endif
 
-
+// Forward declaration of `SmsRetrieverEvent` to properly resolve imports.
+namespace margelo::nitro::nitrootpverify { struct SmsRetrieverEvent; }
 
 #include <string>
 #include <vector>
 #include <NitroModules/Promise.hpp>
+#include "SmsRetrieverEvent.hpp"
 #include <functional>
 
 namespace margelo::nitro::nitrootpverify {
@@ -47,14 +49,13 @@ namespace margelo::nitro::nitrootpverify {
 
     public:
       // Properties
-      
+      virtual bool getIsSupported() = 0;
 
     public:
       // Methods
-      virtual std::shared_ptr<Promise<std::vector<std::string>>> getHash() = 0;
-      virtual std::shared_ptr<Promise<std::string>> requestHint() = 0;
-      virtual std::shared_ptr<Promise<void>> startOtpListener(const std::function<void(const std::string& /* otp */)>& handler) = 0;
-      virtual std::shared_ptr<Promise<void>> stopOtpListener() = 0;
+      virtual std::vector<std::string> getHash() = 0;
+      virtual std::shared_ptr<Promise<void>> startOtpListener(const std::function<void(const SmsRetrieverEvent& /* event */)>& handler) = 0;
+      virtual void stopOtpListener() = 0;
 
     protected:
       // Hybrid Setup

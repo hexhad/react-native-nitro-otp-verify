@@ -50,14 +50,13 @@ namespace margelo::nitro::nitrootpverify {
 
   public:
     // Properties
-    
+    bool getIsSupported() override;
 
   public:
     // Methods
-    std::shared_ptr<Promise<std::vector<std::string>>> getHash() override;
-    std::shared_ptr<Promise<std::string>> requestHint() override;
-    std::shared_ptr<Promise<void>> startOtpListener(const std::function<void(const std::string& /* otp */)>& handler) override;
-    std::shared_ptr<Promise<void>> stopOtpListener() override;
+    std::vector<std::string> getHash() override;
+    std::shared_ptr<Promise<void>> startOtpListener(const std::function<void(const SmsRetrieverEvent& /* event */)>& handler) override;
+    void stopOtpListener() override;
 
   private:
     jni::global_ref<JHybridNitroOtpVerifySpec::JavaPart> _javaPart;

@@ -7,16 +7,24 @@
 
 #include "JHybridNitroOtpVerifySpec.hpp"
 
-
+// Forward declaration of `SmsRetrieverEvent` to properly resolve imports.
+namespace margelo::nitro::nitrootpverify { struct SmsRetrieverEvent; }
+// Forward declaration of `SmsRetrieverStatus` to properly resolve imports.
+namespace margelo::nitro::nitrootpverify { enum class SmsRetrieverStatus; }
 
 #include <string>
 #include <vector>
 #include <NitroModules/Promise.hpp>
 #include <NitroModules/JPromise.hpp>
 #include <NitroModules/JUnit.hpp>
+#include "SmsRetrieverEvent.hpp"
 #include <functional>
-#include "JFunc_void_std__string.hpp"
+#include "JFunc_void_SmsRetrieverEvent.hpp"
 #include <NitroModules/JNICallable.hpp>
+#include "JSmsRetrieverEvent.hpp"
+#include "SmsRetrieverStatus.hpp"
+#include "JSmsRetrieverStatus.hpp"
+#include <optional>
 
 namespace margelo::nitro::nitrootpverify {
 
@@ -48,53 +56,30 @@ namespace margelo::nitro::nitrootpverify {
   }
 
   // Properties
-  
+  bool JHybridNitroOtpVerifySpec::getIsSupported() {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jboolean()>("isSupported");
+    auto __result = method(_javaPart);
+    return static_cast<bool>(__result);
+  }
 
   // Methods
-  std::shared_ptr<Promise<std::vector<std::string>>> JHybridNitroOtpVerifySpec::getHash() {
-    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>()>("getHash");
+  std::vector<std::string> JHybridNitroOtpVerifySpec::getHash() {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<jni::JArrayClass<jni::JString>>()>("getHash");
     auto __result = method(_javaPart);
-    return [&]() {
-      auto __promise = Promise<std::vector<std::string>>::create();
-      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
-        auto __result = jni::static_ref_cast<jni::JArrayClass<jni::JString>>(__boxedResult);
-        __promise->resolve([&](auto&& __input) {
-          size_t __size = __input->size();
-          std::vector<std::string> __vector;
-          __vector.reserve(__size);
-          for (size_t __i = 0; __i < __size; __i++) {
-            auto __element = __input->getElement(__i);
-            __vector.push_back(__element->toStdString());
-          }
-          return __vector;
-        }(__result));
-      });
-      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
-        jni::JniException __jniError(__throwable);
-        __promise->reject(std::make_exception_ptr(__jniError));
-      });
-      return __promise;
-    }();
+    return [&](auto&& __input) {
+      size_t __size = __input->size();
+      std::vector<std::string> __vector;
+      __vector.reserve(__size);
+      for (size_t __i = 0; __i < __size; __i++) {
+        auto __element = __input->getElement(__i);
+        __vector.push_back(__element->toStdString());
+      }
+      return __vector;
+    }(__result);
   }
-  std::shared_ptr<Promise<std::string>> JHybridNitroOtpVerifySpec::requestHint() {
-    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>()>("requestHint");
-    auto __result = method(_javaPart);
-    return [&]() {
-      auto __promise = Promise<std::string>::create();
-      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& __boxedResult) {
-        auto __result = jni::static_ref_cast<jni::JString>(__boxedResult);
-        __promise->resolve(__result->toStdString());
-      });
-      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
-        jni::JniException __jniError(__throwable);
-        __promise->reject(std::make_exception_ptr(__jniError));
-      });
-      return __promise;
-    }();
-  }
-  std::shared_ptr<Promise<void>> JHybridNitroOtpVerifySpec::startOtpListener(const std::function<void(const std::string& /* otp */)>& handler) {
-    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<JFunc_void_std__string::javaobject> /* handler */)>("startOtpListener_cxx");
-    auto __result = method(_javaPart, JFunc_void_std__string_cxx::fromCpp(handler));
+  std::shared_ptr<Promise<void>> JHybridNitroOtpVerifySpec::startOtpListener(const std::function<void(const SmsRetrieverEvent& /* event */)>& handler) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>(jni::alias_ref<JFunc_void_SmsRetrieverEvent::javaobject> /* handler */)>("startOtpListener_cxx");
+    auto __result = method(_javaPart, JFunc_void_SmsRetrieverEvent_cxx::fromCpp(handler));
     return [&]() {
       auto __promise = Promise<void>::create();
       __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& /* unit */) {
@@ -107,20 +92,9 @@ namespace margelo::nitro::nitrootpverify {
       return __promise;
     }();
   }
-  std::shared_ptr<Promise<void>> JHybridNitroOtpVerifySpec::stopOtpListener() {
-    static const auto method = _javaPart->javaClassStatic()->getMethod<jni::local_ref<JPromise::javaobject>()>("stopOtpListener");
-    auto __result = method(_javaPart);
-    return [&]() {
-      auto __promise = Promise<void>::create();
-      __result->cthis()->addOnResolvedListener([=](const jni::alias_ref<jni::JObject>& /* unit */) {
-        __promise->resolve();
-      });
-      __result->cthis()->addOnRejectedListener([=](const jni::alias_ref<jni::JThrowable>& __throwable) {
-        jni::JniException __jniError(__throwable);
-        __promise->reject(std::make_exception_ptr(__jniError));
-      });
-      return __promise;
-    }();
+  void JHybridNitroOtpVerifySpec::stopOtpListener() {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void()>("stopOtpListener");
+    method(_javaPart);
   }
 
 } // namespace margelo::nitro::nitrootpverify

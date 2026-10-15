@@ -12,12 +12,18 @@
 // Forward declaration of `HybridNitroOtpVerifySpec_cxx` to properly resolve imports.
 namespace NitroOtpVerify { class HybridNitroOtpVerifySpec_cxx; }
 
-
+// Forward declaration of `SmsRetrieverEvent` to properly resolve imports.
+namespace margelo::nitro::nitrootpverify { struct SmsRetrieverEvent; }
+// Forward declaration of `SmsRetrieverStatus` to properly resolve imports.
+namespace margelo::nitro::nitrootpverify { enum class SmsRetrieverStatus; }
 
 #include <string>
 #include <vector>
 #include <NitroModules/Promise.hpp>
+#include "SmsRetrieverEvent.hpp"
 #include <functional>
+#include "SmsRetrieverStatus.hpp"
+#include <optional>
 
 #include "NitroOtpVerify-Swift-Cxx-Umbrella.hpp"
 
@@ -65,11 +71,13 @@ namespace margelo::nitro::nitrootpverify {
 
   public:
     // Properties
-    
+    inline bool getIsSupported() noexcept override {
+      return _swiftPart.isSupported();
+    }
 
   public:
     // Methods
-    inline std::shared_ptr<Promise<std::vector<std::string>>> getHash() override {
+    inline std::vector<std::string> getHash() override {
       auto __result = _swiftPart.getHash();
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
@@ -77,15 +85,7 @@ namespace margelo::nitro::nitrootpverify {
       auto __value = std::move(__result.value());
       return __value;
     }
-    inline std::shared_ptr<Promise<std::string>> requestHint() override {
-      auto __result = _swiftPart.requestHint();
-      if (__result.hasError()) [[unlikely]] {
-        std::rethrow_exception(__result.error());
-      }
-      auto __value = std::move(__result.value());
-      return __value;
-    }
-    inline std::shared_ptr<Promise<void>> startOtpListener(const std::function<void(const std::string& /* otp */)>& handler) override {
+    inline std::shared_ptr<Promise<void>> startOtpListener(const std::function<void(const SmsRetrieverEvent& /* event */)>& handler) override {
       auto __result = _swiftPart.startOtpListener(handler);
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
@@ -93,13 +93,11 @@ namespace margelo::nitro::nitrootpverify {
       auto __value = std::move(__result.value());
       return __value;
     }
-    inline std::shared_ptr<Promise<void>> stopOtpListener() override {
+    inline void stopOtpListener() override {
       auto __result = _swiftPart.stopOtpListener();
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }
-      auto __value = std::move(__result.value());
-      return __value;
     }
 
   private:

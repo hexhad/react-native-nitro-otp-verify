@@ -1,32 +1,36 @@
 # react-native-nitro-otp-verify
 
-> Automatic OTP/SMS reading for Android, built on [Nitro Modules](https://nitro.margelo.com) for synchronous JSI performance.
+> Zero-tap OTP/SMS reading for Android via Google's [SMS Retriever API](https://developers.google.com/identity/sms-retriever/overview), built on [Nitro Modules](https://nitro.margelo.com).
 
 [![Version](https://img.shields.io/npm/v/react-native-nitro-otp-verify.svg)](https://www.npmjs.com/package/react-native-nitro-otp-verify)
 [![Downloads](https://img.shields.io/npm/dm/react-native-nitro-otp-verify.svg)](https://www.npmjs.com/package/react-native-nitro-otp-verify)
+[![CI](https://github.com/hexhad/react-native-nitro-otp-verify/actions/workflows/ci.yml/badge.svg)](https://github.com/hexhad/react-native-nitro-otp-verify/actions/workflows/ci.yml)
 [![License](https://img.shields.io/npm/l/react-native-nitro-otp-verify.svg)](https://github.com/hexhad/react-native-nitro-otp-verify/blob/main/LICENSE)
 
 ---
 
 ## Features
 
-- 📩 Auto-reads OTP from incoming SMS on Android
-- ⚡ Built with Nitro Modules — no bridge overhead
-- 🔑 Computes your app's 11-char SMS Retriever hash
-- ⏱️ Built-in timeout detection
-- 🪝 Simple `useOtpVerify` hook — drop in and go
-- 🍎 iOS-safe — no-ops on iOS, no crashes
+- 📩 Reads the OTP from an incoming SMS automatically — no prompt, no tap
+- 🔒 No `READ_SMS` / `RECEIVE_SMS` permissions; only Play services can deliver to the receiver
+- ⚡ Nitro Modules: synchronous JSI calls for `getHash()` / `isSupported`, no bridge
+- 🔑 Computes your app's 11-character SMS Retriever hash
+- ⏱️ Native timeout and error reporting
+- 🪝 One `useOtpVerify` hook, or the raw module
+- 🍎 Safe no-op on iOS (pair with `textContentType="oneTimeCode"`)
+- 🛡️ Ships consumer ProGuard/R8 rules — works in minified release builds
+
+> Prefer a one-tap consent sheet and no app hash? See the sibling package [`react-native-nitro-sms-user-consent`](https://github.com/hexhad/react-native-nitro-sms-user-consent).
 
 ---
 
 ## Requirements
 
-|                              | Minimum |
-| ---------------------------- | ------- |
-| React Native                 | 0.76.0  |
-| Node                         | 18.0.0  |
-| Android                      | API 23+ |
-| `react-native-nitro-modules` | 0.18.0+ |
+|                              | Minimum                      |
+| ---------------------------- | ---------------------------- |
+| React Native                 | 0.76 (New Architecture)      |
+| `react-native-nitro-modules` | 0.35                         |
+| Android                      | API 23+ with Google Play services |
 
 ---
 
@@ -35,35 +39,34 @@
 ```sh
 npm install react-native-nitro-otp-verify react-native-nitro-modules
 # or
-yarn add react-native-nitro-otp-verify react-native-nitro-modules
-# or
 bun add react-native-nitro-otp-verify react-native-nitro-modules
 ```
 
-No extra setup needed. Play Services is included automatically.
+Rebuild the native app afterwards (`pod install` on iOS, fresh Gradle build on Android).
 
 ---
 
 ## Usage
 
-### Hook
-
-```js
+```tsx
 import { useOtpVerify } from 'react-native-nitro-otp-verify'
 
 export default function OtpScreen() {
-  const { otp, hash, timeoutError, startListener, stopListener } = useOtpVerify(
-    {
-      numberOfDigits: 6,
-    }
-  )
+  const { otp, hash, timeoutError, error, startListener } = useOtpVerify({
+    numberOfDigits: 6,
+  })
 
   return (
     <View>
-      <Text>App Hash: {hash?.[0]}</Text>
-      <TextInput value={otp ?? ''} placeholder="Waiting for OTP..." />
-      {timeoutError && <Text>Timeout — no SMS received</Text>}
-      <Button title="Restart" onPress={startListener} />
+      <TextInput
+        value={otp ?? ''}
+        textContentType="oneTimeCode" // iOS autofill
+        autoComplete="sms-otp"
+        keyboardType="number-pad"
+      />
+      {(timeoutError || error) && (
+        <Button title="Resend code" onPress={startListener} />
+      )}
     </View>
   )
 }
@@ -73,94 +76,116 @@ export default function OtpScreen() {
 
 ```ts
 const {
-  otp, // string | null — extracted OTP digits
-  message, // string | null — full raw SMS message
-  hash, // string[] | null — your app's 11-char hash(es)
-  timeoutError, // boolean — true if 5 min passed with no SMS
-  startListener, // () => void — start/restart listening
-  stopListener, // () => void — stop listening manually
-} = useOtpVerify({ numberOfDigits: 6 })
+  otp, //           string | null   — extracted code
+  message, //       string | null   — full SMS text
+  hash, //          string[] | null — 11-char app hash(es); null on iOS
+  timeoutError, //  boolean         — 5 minutes passed with no SMS
+  error, //         string | null   — Play services error / unsupported device
+  isSupported, //   boolean         — false on iOS or without Play services
+  isListening, //   boolean
+  startListener, // () => void      — start / restart
+  stopListener, //  () => void
+} = useOtpVerify({
+  numberOfDigits: 6, // default 6
+  autoStart: true, //   default true
+  extractOtp: (message) => '…', // optional custom extraction
+})
 ```
 
----
+The default extraction picks the first standalone run of exactly `numberOfDigits` digits, so `"Ref 4821. Your code is 739104"` yields `739104`. It's also exported as `extractDigits(message, numberOfDigits)`.
 
-## SMS Template
-
-Your backend must send an SMS in this exact format for Android to route it to your app:
-
-```
-Your OTP is 123456.
-
-<#> YourAppName
-<YOUR_11_CHAR_HASH>
-```
-
-Get your 11-char hash from the `hash` value returned by the hook and pass it to your backend SMS template.
-
----
-
-## How it works
-
-1. On mount, `useOtpVerify` calls `getHash()` to retrieve your app's SMS Retriever hash
-2. `startOtpListener()` registers Android's `SmsRetriever` broadcast receiver — **no READ_SMS permission required**
-3. When an SMS arrives containing your hash, Android delivers it directly to your app
-4. The OTP digits are extracted and returned via the `otp` state
-5. The listener auto-stops after receiving an OTP or after a 5-minute timeout
-
----
-
-## Module API
-
-If you need direct access beyond the hook:
+### Module API
 
 ```ts
 import { NitroOtpVerify } from 'react-native-nitro-otp-verify'
 
-// Get app hash for your SMS template
-const hash = await NitroOtpVerify.getHash()
+NitroOtpVerify.isSupported // boolean (sync)
+NitroOtpVerify.getHash() //   string[] (sync, cached)
 
-// Start listening
-await NitroOtpVerify.startOtpListener((smsMessage) => {
-  console.log('SMS received:', smsMessage)
+await NitroOtpVerify.startOtpListener((event) => {
+  // event.status: 'received' | 'timeout' | 'error'
+  if (event.status === 'received') console.log(event.message)
 })
 
-// Stop listening
-await NitroOtpVerify.stopOtpListener()
+NitroOtpVerify.stopOtpListener() // sync, idempotent
+```
+
+The handler fires at most once per session; starting again replaces the previous session.
+
+---
+
+## SMS template
+
+The SMS must be ≤ 140 bytes, contain the code, and contain your app hash:
+
+```
+<#> Your MyApp code is 123456
+FA+9qCX9VSu
+```
+
+⚠️ The hash depends on the **signing key**. Debug, release and **Google Play App Signing** builds all have different hashes — configure the backend with the hash of the build your users install. See [`sms-format-and-hash.md`](./skills/react-native-nitro-otp-verify/references/sms-format-and-hash.md) for computing the production hash from the Play signing certificate.
+
+---
+
+## Testing on an emulator
+
+Use a Google Play / Google APIs system image and send an SMS through the emulator console:
+
+```sh
+adb emu sms send 5551234 "Your code is 123456 <YOUR_HASH>"
 ```
 
 ---
 
-## Permissions
+## Migrating from 0.1.x
 
-No special permissions required. This library uses the [SMS Retriever API](https://developers.google.com/identity/sms-retriever/overview) which does **not** require `READ_SMS` or `RECEIVE_SMS`.
+The hook is backwards compatible. Direct module users:
+
+| 0.1.x                                   | 0.2+                                           |
+| --------------------------------------- | ---------------------------------------------- |
+| `await NitroOtpVerify.getHash()`        | `NitroOtpVerify.getHash()` (sync)              |
+| `startOtpListener((sms: string) => …)`  | `startOtpListener((event) => event.message …)` |
+| `await NitroOtpVerify.stopOtpListener()` | `NitroOtpVerify.stopOtpListener()` (sync)      |
+| `requestHint()`                         | removed (was a stub)                           |
 
 ---
 
-## Platform Support
+## AI agent skill
 
-| Platform | Status                       |
-| -------- | ---------------------------- |
-| Android  | ✅ Fully supported           |
-| iOS      | 🚧 No-op stubs (coming soon) |
+[`skills/react-native-nitro-otp-verify`](./skills/react-native-nitro-otp-verify/SKILL.md) is an agent skill (Claude Code and other `SKILL.md`-compatible agents). It covers the hook, the module, the SMS template and app hash, and troubleshooting. Install it into `~/.claude/skills/`:
+
+```sh
+npx degit hexhad/react-native-nitro-otp-verify/skills/react-native-nitro-otp-verify ~/.claude/skills/react-native-nitro-otp-verify
+```
+
+It's also shipped in the npm package under `node_modules/react-native-nitro-otp-verify/skills/`.
+
+---
+
+## Platform support
+
+| Platform | Status                                                   |
+| -------- | -------------------------------------------------------- |
+| Android  | ✅ Supported                                             |
+| iOS      | No-op — iOS has no SMS API; use `textContentType="oneTimeCode"` |
+
+---
+
+## Contributing
+
+Pull requests are welcome. `main` is protected: open a PR, CI (typecheck, tests, build) must pass, and commits follow [Conventional Commits](https://www.conventionalcommits.org) — releases are cut automatically from them.
+
+```sh
+bun install
+bun run test
+bun run build
+```
 
 ---
 
 ## Credits
 
 Bootstrapped with [create-nitro-module](https://github.com/patrickkabwe/create-nitro-module).
-
----
-
-## Contributing
-
-Pull requests are welcome. For major changes please open an issue first to discuss what you would like to change.
-
-1. Fork the repo
-2. Create your branch: `git checkout -b feat/my-feature`
-3. Commit your changes: `git commit -m 'feat: add my feature'`
-4. Push and open a PR
-
----
 
 ## License
 
