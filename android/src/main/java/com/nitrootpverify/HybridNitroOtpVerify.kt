@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.SystemClock
 import android.util.Base64
 import androidx.annotation.Keep
 import androidx.core.content.ContextCompat
@@ -34,6 +35,7 @@ class HybridNitroOtpVerify : HybridNitroOtpVerifySpec() {
   private val lock = Any()
   private var handler: ((event: SmsRetrieverEvent) -> Unit)? = null
   private var receiver: BroadcastReceiver? = null
+  private var sessionStartedAt = 0L
 
   override val memorySize: Long get() = 0L
 
@@ -60,6 +62,7 @@ class HybridNitroOtpVerify : HybridNitroOtpVerifySpec() {
       synchronized(lock) {
         this.handler = handler
         receiver = rx
+        sessionStartedAt = SystemClock.elapsedRealtime()
       }
       // The broadcast comes from Play services (another app), so the receiver must be
       // exported on Android 13+; SEND_PERMISSION ensures only Play services can deliver it,
@@ -111,8 +114,13 @@ class HybridNitroOtpVerify : HybridNitroOtpVerifySpec() {
           val message = extras.getString(SmsRetriever.EXTRA_SMS_MESSAGE) ?: return
           finish(SmsRetrieverEvent(SmsRetrieverStatus.RECEIVED, message, null))
         }
-        CommonStatusCodes.TIMEOUT ->
+        CommonStatusCodes.TIMEOUT -> {
+          // Restarting doesn't cancel an earlier retriever's 5-minute timer, so its
+          // TIMEOUT can land on this session. Only accept our own.
+          val elapsed = SystemClock.elapsedRealtime() - synchronized(lock) { sessionStartedAt }
+          if (elapsed < MIN_TIMEOUT_MS) return
           finish(SmsRetrieverEvent(SmsRetrieverStatus.TIMEOUT, null, null))
+        }
         else -> finish(
           SmsRetrieverEvent(
             SmsRetrieverStatus.ERROR,
@@ -149,6 +157,11 @@ class HybridNitroOtpVerify : HybridNitroOtpVerifySpec() {
     }.distinct().toTypedArray()
   } catch (_: Exception) {
     emptyArray()
+  }
+
+  private companion object {
+    // Play services times a session out after 5 minutes; allow for clock slack
+    const val MIN_TIMEOUT_MS = 5 * 60 * 1000L - 15 * 1000L
   }
 
   private val appContext: Context

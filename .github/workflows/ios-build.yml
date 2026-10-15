@@ -72,15 +72,15 @@ jobs:
       - name: Install xcpretty
         run: gem install xcpretty
 
-      - name: Cache CocoaPods
+      # Only the spec repo is cached: a restored Pods/ from another React Native
+      # version conflicts with the regenerated Podfile.lock
+      - name: Cache CocoaPods specs
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.cocoapods/repos
-            example/ios/Pods
-          key: ${{ runner.os }}-pods-${{ hashFiles('example/ios/Podfile.lock') }}
+          path: ~/.cocoapods/repos
+          key: ${{ runner.os }}-cocoapods-repos-${{ hashFiles('example/ios/Podfile.lock') }}
           restore-keys: |
-            ${{ runner.os }}-pods-
+            ${{ runner.os }}-cocoapods-repos-
 
       - name: Install Pods
         working-directory: example/ios

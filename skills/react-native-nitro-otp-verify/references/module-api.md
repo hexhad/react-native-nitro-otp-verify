@@ -41,6 +41,7 @@ NitroOtpVerify.stopOtpListener() // sync, idempotent
 These matter when debugging:
 
 - The broadcast receiver is registered with `RECEIVER_EXPORTED` **and** `SmsRetriever.SEND_PERMISSION`. Exported is required because Play services (another app) sends the broadcast; the permission means only Play services can deliver it, so other apps can't inject fake OTPs.
+- Restarting does **not** cancel an earlier retriever's 5-minute Play services timer. A `TIMEOUT` broadcast that arrives before the current session could have timed out (< ~4m45s) is treated as stale and ignored, so "Resend code" after a few minutes doesn't end the new session early.
 - The receiver is registered *before* `startSmsRetriever()` so an instantly-delivered SMS can't be missed.
 - `getHash()` hashes `"<packageName> <signing certificate>"` with SHA-256, base64, first 11 chars — one entry per signer.
 - Consumer ProGuard rules keep `com.nitrootpverify.**`: Nitro constructs the class from C++ via JNI, which R8 can't see. No extra rules are needed in the app.

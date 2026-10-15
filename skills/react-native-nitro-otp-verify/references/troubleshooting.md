@@ -10,6 +10,10 @@ Check in order:
 4. **Session already ended** — one SMS per session; call `startListener()` again for resend.
 5. **No Play services** — `isSupported === false` (Huawei/AOSP devices, emulators without Google APIs). Provide manual entry.
 
+## Timeout arrives too early after a restart
+
+Fixed in 0.2: Play services keeps the previous session's 5-minute timer running after a restart, and its stale `TIMEOUT` used to end the new session. The native side now ignores timeouts that arrive before the current session's own window.
+
 ## Works in debug, fails in production
 
 Play App Signing re-signs the APK/AAB. Use the hash from the **app signing key** (see `sms-format-and-hash.md`). Debug and upload-key hashes will not match production installs.
