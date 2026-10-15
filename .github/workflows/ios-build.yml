@@ -75,7 +75,7 @@ jobs:
       # Only the spec repo is cached: a restored Pods/ from another React Native
       # version conflicts with the regenerated Podfile.lock
       - name: Cache CocoaPods specs
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cocoapods/repos
           key: ${{ runner.os }}-cocoapods-repos-${{ hashFiles('example/ios/Podfile.lock') }}
