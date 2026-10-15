@@ -15,7 +15,7 @@ namespace margelo::nitro::nitrootpverify {
   using namespace facebook;
 
   /**
-   * The C++ JNI bridge between the C++ enum "SmsRetrieverStatus" and the the Kotlin enum "SmsRetrieverStatus".
+   * The C++ JNI bridge between the C++ enum "SmsRetrieverStatus" and the Kotlin enum "SmsRetrieverStatus".
    */
   struct JSmsRetrieverStatus final: public jni::JavaClass<JSmsRetrieverStatus> {
   public:

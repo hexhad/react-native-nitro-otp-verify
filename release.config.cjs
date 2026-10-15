@@ -15,6 +15,7 @@ const sortMap = Object.fromEntries(
  * @type {import('semantic-release').GlobalConfig}
  */
 module.exports = {
+  tagFormat: 'v${version}',
   branches: ['main', { name: 'next', prerelease: 'next' }],
   plugins: [
     [

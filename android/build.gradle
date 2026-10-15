@@ -5,7 +5,7 @@ buildscript {
   }
 
   dependencies {
-    classpath "com.android.tools.build:gradle:8.8.0"
+    classpath "com.android.tools.build:gradle:9.3.1"
   }
 }
 
@@ -139,9 +139,10 @@ dependencies {
   // Add a dependency on NitroModules
   implementation project(":react-native-nitro-modules")
 
+  // 18.3+ ships Kotlin 2.3 metadata, which breaks apps on RN's Kotlin 2.1 toolchain
   implementation 'com.google.android.gms:play-services-auth-api-phone:18.2.0'
-  implementation 'com.google.android.gms:play-services-base:18.5.0'
-  implementation 'androidx.core:core:1.13.1'
+  implementation 'com.google.android.gms:play-services-base:18.11.1'
+  implementation 'androidx.core:core:1.17.0'
 }
 
 if (isNewArchitectureEnabled()) {

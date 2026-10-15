@@ -44,7 +44,7 @@ Then rebuild natively: `pod install` for iOS and a fresh Gradle build for Androi
 
 Requirements:
 - React Native New Architecture, 0.76+
-- `react-native-nitro-modules` 0.35+
+- `react-native-nitro-modules` 0.37+
 - Android API 23+ with Google Play services
 
 ## Minimal example

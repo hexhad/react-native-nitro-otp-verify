@@ -20,7 +20,7 @@ namespace margelo::nitro::nitrootpverify {
   using namespace facebook;
 
   /**
-   * The C++ JNI bridge between the C++ struct "SmsRetrieverEvent" and the the Kotlin data class "SmsRetrieverEvent".
+   * The C++ JNI bridge between the C++ struct "SmsRetrieverEvent" and the Kotlin data class "SmsRetrieverEvent".
    */
   struct JSmsRetrieverEvent final: public jni::JavaClass<JSmsRetrieverEvent> {
   public:

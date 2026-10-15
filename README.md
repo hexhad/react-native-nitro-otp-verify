@@ -29,7 +29,7 @@
 |                              | Minimum                      |
 | ---------------------------- | ---------------------------- |
 | React Native                 | 0.76 (New Architecture)      |
-| `react-native-nitro-modules` | 0.35                         |
+| `react-native-nitro-modules` | 0.37                         |
 | Android                      | API 23+ with Google Play services |
 
 ---
