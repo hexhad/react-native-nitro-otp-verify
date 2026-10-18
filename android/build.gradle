@@ -142,7 +142,7 @@ dependencies {
   // 18.3+ ships Kotlin 2.3 metadata, which breaks apps on RN's Kotlin 2.1 toolchain
   implementation 'com.google.android.gms:play-services-auth-api-phone:18.2.0'
   implementation 'com.google.android.gms:play-services-base:18.11.1'
-  implementation 'androidx.core:core:1.17.0'
+  implementation 'androidx.core:core:1.19.1'
 }
 
 if (isNewArchitectureEnabled()) {
